@@ -7,6 +7,8 @@ import javax.persistence.Id
 
 @Entity
 class Hello(
+    val content: String,
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0L,
