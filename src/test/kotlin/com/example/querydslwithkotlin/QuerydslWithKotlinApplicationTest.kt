@@ -7,6 +7,7 @@ import com.example.querydslwithkotlin.entity.QMember
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -18,6 +19,20 @@ import javax.persistence.EntityManager
 internal class QuerydslWithKotlinApplicationTest {
     @Autowired
     private lateinit var entityManager: EntityManager
+
+    /**
+     * QueryFactory를 필드 레벨로 가져가도 괜찮음.
+     * 동시성 문제 같은 것에 대한 고민 안해도 된다!
+     * -> 동시에 여러 쓰레드에서 entityManager에 접근하게 되면, 어떻게 될까...?
+     * 스프링 프레임워크가 주입해주는 em 자체가 멀티 스레드에 아무 문제가 없도록 설계되어 있음.
+     * 여러 멀티 스레드에서 접근해도 현재는 트랜잭션이 어디에 걸려있는지에 따라 트랜잭션에 걸리도록 되어있음.
+     */
+    private lateinit var queryFactory: JPAQueryFactory
+
+    @BeforeEach
+    internal fun setUp() {
+        queryFactory = JPAQueryFactory(entityManager)
+    }
 
     @Test
     internal fun queryDslTestWithJUnit5() {
@@ -33,7 +48,7 @@ internal class QuerydslWithKotlinApplicationTest {
         val result = query.selectFrom(qHello)
             .fetchOne()
 
-        Assertions.assertThat(result).isSameAs(hello)
+        assertThat(result).isSameAs(hello)
     }
 
     @Test
@@ -49,8 +64,7 @@ internal class QuerydslWithKotlinApplicationTest {
         entityManager.flush()
         entityManager.clear()
 
-        val queryFactory = JPAQueryFactory(entityManager)
-        val m = QMember("m")
+        val m = QMember.member
 
         val findMember = queryFactory.selectFrom(m)
             .where(m.username.eq("member1"))
