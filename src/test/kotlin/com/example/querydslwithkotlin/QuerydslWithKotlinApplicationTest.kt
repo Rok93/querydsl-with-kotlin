@@ -4,6 +4,7 @@ import com.example.querydslwithkotlin.entity.Hello
 import com.example.querydslwithkotlin.entity.Member
 import com.example.querydslwithkotlin.entity.QHello
 import com.example.querydslwithkotlin.entity.QMember
+import com.example.querydslwithkotlin.entity.QMember.*
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
@@ -64,10 +65,8 @@ internal class QuerydslWithKotlinApplicationTest {
         entityManager.flush()
         entityManager.clear()
 
-        val m = QMember.member
-
-        val findMember = queryFactory.selectFrom(m)
-            .where(m.username.eq("member1"))
+        val findMember = queryFactory.selectFrom(member)
+            .where(member.username.eq("member1"))
             .fetchOne()
 
         assertThat(findMember!!.username).isEqualTo("member1")
