@@ -91,4 +91,22 @@ internal class QuerydslWithKotlinApplicationTest {
         assertThat(findMember.username).isEqualTo("member1")
         assertThat(findMember.age).isEqualTo(10)
     }
+
+    @Test
+    internal fun resultFetch() {
+        val fetch = queryFactory.selectFrom(member)
+            .fetch()
+
+        val fetchOne = queryFactory.selectFrom(member)
+            .fetchOne()
+
+        val fetchFirst = queryFactory.selectFrom(member)
+            .fetchFirst() // limit(1).fetchOne() 과 동일!
+
+        val fetchResults = queryFactory.selectFrom(member)
+            .fetchResults() // 쿼리가 두번나감.
+
+        val fetchCount = queryFactory.selectFrom(member)
+            .fetchCount()
+    }
 }
