@@ -3,10 +3,8 @@ package com.example.querydslwithkotlin
 import com.example.querydslwithkotlin.entity.Hello
 import com.example.querydslwithkotlin.entity.Member
 import com.example.querydslwithkotlin.entity.QHello
-import com.example.querydslwithkotlin.entity.QMember
 import com.example.querydslwithkotlin.entity.QMember.*
 import com.querydsl.jpa.impl.JPAQueryFactory
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -33,6 +31,25 @@ internal class QuerydslWithKotlinApplicationTest {
     @BeforeEach
     internal fun setUp() {
         queryFactory = JPAQueryFactory(entityManager)
+
+        entityManager.persist(
+            Member(
+                username = "member1",
+                age = 10,
+                team = null
+            )
+        )
+
+        entityManager.persist(
+            Member(
+                username = "member2",
+                age = 20,
+                team = null
+            )
+        )
+
+        entityManager.flush()
+        entityManager.clear()
     }
 
     @Test
@@ -54,21 +71,24 @@ internal class QuerydslWithKotlinApplicationTest {
 
     @Test
     internal fun startQuerydsl() {
-        // given
-        entityManager.persist(
-            Member(
-                username = "member1",
-                age = 20,
-                team = null
-            )
-        )
-        entityManager.flush()
-        entityManager.clear()
-
         val findMember = queryFactory.selectFrom(member)
             .where(member.username.eq("member1"))
             .fetchOne()
 
         assertThat(findMember!!.username).isEqualTo("member1")
+    }
+
+    @Test
+    internal fun search() {
+        val findMember = queryFactory.selectFrom(member)
+            .where(
+                member.username.eq("member1"),
+//                    .and(member.age.eq(10))
+                member.age.eq(10) // ','은 and 조건과 동일함!
+// where 조건에 'null' 값이 들어가면, 그 조건은 없는 것으로 처리함! (동적 쿼리 작성 가능!)
+            ).fetchOne()!!
+
+        assertThat(findMember.username).isEqualTo("member1")
+        assertThat(findMember.age).isEqualTo(10)
     }
 }
