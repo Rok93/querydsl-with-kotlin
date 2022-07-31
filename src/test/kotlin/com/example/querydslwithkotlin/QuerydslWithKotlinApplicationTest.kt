@@ -97,8 +97,8 @@ internal class QuerydslWithKotlinApplicationTest {
         val fetch = queryFactory.selectFrom(member)
             .fetch()
 
-        val fetchOne = queryFactory.selectFrom(member)
-            .fetchOne()
+//        val fetchOne = queryFactory.selectFrom(member)
+//            .fetchOne()
 
         val fetchFirst = queryFactory.selectFrom(member)
             .fetchFirst() // limit(1).fetchOne() 과 동일!
@@ -108,5 +108,30 @@ internal class QuerydslWithKotlinApplicationTest {
 
         val fetchCount = queryFactory.selectFrom(member)
             .fetchCount()
+    }
+
+    /**
+     * 회원 정렬 순서
+     * 1. 회원 나이 내림차순 (DESC)
+     * 2. 회원 이름 올림차순 (ASC)
+     * 단, 2에서 회원 이름이 없으면 마지막에 출력(nulls last)
+     */
+    @Test
+    internal fun sort() {
+        entityManager.persist(Member(null, age = 100))
+        entityManager.persist(Member("member5", age = 100))
+        entityManager.persist(Member("member6", age = 100))
+
+        val result = queryFactory.selectFrom(member)
+            .where(member.age.eq(100))
+            .orderBy(
+                member.age.desc(),
+                member.username.asc().nullsLast(),
+            )
+            .fetch()
+
+        assertThat(result[0].username).isEqualTo("member5")
+        assertThat(result[1].username).isEqualTo("member6")
+        assertThat(result[2].username).isNull()
     }
 }

@@ -4,7 +4,7 @@ import javax.persistence.*
 
 @Entity
 class Member(
-    val username: String,
+    val username: String?,
     val age: Int = 0, // TODO 2022-07-28 경록: Inline Class로 변경해보기!
     team: Team? = null,
 ) {
