@@ -4,6 +4,9 @@ import com.example.querydslwithkotlin.entity.Hello
 import com.example.querydslwithkotlin.entity.Member
 import com.example.querydslwithkotlin.entity.QHello
 import com.example.querydslwithkotlin.entity.QMember.*
+import com.example.querydslwithkotlin.entity.QTeam.team
+import com.example.querydslwithkotlin.entity.Team
+import com.querydsl.core.Tuple
 import com.querydsl.jpa.impl.JPAQueryFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -32,11 +35,21 @@ internal class QuerydslWithKotlinApplicationTest {
     internal fun setUp() {
         queryFactory = JPAQueryFactory(entityManager)
 
+        val teamA = Team("teamA")
+        entityManager.persist(
+            teamA
+        )
+
+        val teamB = Team("teamB")
+        entityManager.persist(
+            teamB
+        )
+
         entityManager.persist(
             Member(
                 username = "member1",
                 age = 10,
-                team = null
+                team = teamA
             )
         )
 
@@ -44,7 +57,7 @@ internal class QuerydslWithKotlinApplicationTest {
             Member(
                 username = "member2",
                 age = 20,
-                team = null
+                team = teamB
             )
         )
 
@@ -126,7 +139,7 @@ internal class QuerydslWithKotlinApplicationTest {
             .where(member.age.eq(100))
             .orderBy(
                 member.age.desc(),
-                member.username.asc().nullsLast(),
+                member.username.asc().nullsLast()
             )
             .fetch()
 
@@ -159,4 +172,60 @@ internal class QuerydslWithKotlinApplicationTest {
         assertThat(queryResults.offset).isEqualTo(0)
         assertThat(queryResults.results).hasSize(2)
     }
+
+    @Test
+    internal fun aggregation() {
+        // 내가 조회하고 싶은 값들만 정해서 조회를 하면, Tuple 타입으로 결과 값이 나온다. (참고, Tuple은 Querydsl의 Tuple임)
+        // 이런 경우에는 DTO로 뽑을 수도 있음. 실무에서는 DTO를 사용하는 방식을 더 많이 사용함.
+        val result: MutableList<Tuple> = queryFactory
+            .select(
+                member.count(),
+                member.age.sum(),
+                member.age.avg(),
+                member.age.max(),
+                member.age.min()
+            )
+            .from(member)
+            .fetch()
+
+        // tuple은 여러개의 타입이 있을 때, 꺼내올 수 있는 것
+        val tuple = result[0]
+        assertThat(tuple[member.count()]).isEqualTo(2)
+        assertThat(tuple[member.age.sum()]).isEqualTo(30)
+        assertThat(tuple[member.age.avg()]).isEqualTo(15.0)
+        assertThat(tuple[member.age.max()]).isEqualTo(20)
+        assertThat(tuple[member.age.min()]).isEqualTo(10)
+    }
+
+    /**
+     * 팀의 이름과 각 팀의 평균 연령을 구하라!
+     */
+    @Test
+    internal fun group() {
+        val result = queryFactory.select(
+            team.name,
+            member.age.avg()
+        )
+            .from(member)
+            .join(member.team, team)
+            .groupBy(team.name)
+            .fetch()
+
+        val teamA = result[0]
+        val teamB = result[1]
+
+        assertThat(teamA[team.name]).isEqualTo("teamA")
+        assertThat(teamA[member.age.avg()]).isEqualTo(10.0)
+
+        assertThat(teamB[team.name]).isEqualTo("teamB")
+        assertThat(teamB[member.age.avg()]).isEqualTo(20.0)
+    }
+
+    /*
+    groupBy 예시
+
+    .groupBy(item.price)
+    .having(item.price.gt(1_000))
+    ...
+     */
 }
