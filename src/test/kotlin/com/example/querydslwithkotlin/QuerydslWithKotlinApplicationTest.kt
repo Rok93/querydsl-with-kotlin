@@ -134,4 +134,29 @@ internal class QuerydslWithKotlinApplicationTest {
         assertThat(result[1].username).isEqualTo("member6")
         assertThat(result[2].username).isNull()
     }
+
+    @Test
+    internal fun paging1() {
+        val result = queryFactory.selectFrom(member)
+            .orderBy(member.username.desc())
+            .offset(0)
+            .limit(2)
+            .fetch()
+
+        assertThat(result).hasSize(2)
+    }
+
+    @Test
+    internal fun paging2() {
+        val queryResults = queryFactory.selectFrom(member)
+            .orderBy(member.username.desc())
+            .offset(0)
+            .limit(2)
+            .fetchResults()
+
+        assertThat(queryResults.total).isEqualTo(2)
+        assertThat(queryResults.limit).isEqualTo(2)
+        assertThat(queryResults.offset).isEqualTo(0)
+        assertThat(queryResults.results).hasSize(2)
+    }
 }
